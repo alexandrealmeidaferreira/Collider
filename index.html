@@ -1,0 +1,205 @@
+<html>
+
+<head>
+    <title>Collision for Javascript</title>
+    <script type="module">
+        import { AdvancedInput } from './src/AdvancedInput.js'
+        import { Layer } from './src/Layer.js'
+        import { Collision } from './collision/src/Collision.js'
+
+        //INPUT
+        const input = new AdvancedInput();
+        input.createKeyboard('Player1', {
+            ArrowUp: 'Up',
+            ArrowDown: 'Down',
+            ArrowLeft: 'Left',
+            ArrowRight: 'Right',
+            Enter: 'Start',
+            Esc: 'Select',
+            z: 'ButtonA',
+            x: 'ButtonB',
+            a: 'ButtonX',
+            s: 'ButtonY',
+            d: 'ButtonL',
+            c: 'ButtonR',
+            q: 'ButtonL2',
+            w: 'ButtonR2',
+            e: 'ButtonL3',
+            r: 'ButtonR3',
+        });
+
+        input.createGamepad('Player1', 'DEFAULT_GENERIC');
+        input.setAxesPrecision('Player1', 0.5);
+        input.start();
+        let pixels = 7;
+
+        input.listen((inputId, inputType, state) => {
+            //console.log(inputId, inputType, state);
+            console.log(state.arrayStates)
+
+            stopMove();
+            if (state.arrayStates.indexOf('Up') !== -1) {
+                moveU();
+
+            }
+            if (state.arrayStates.indexOf('UpLeft') !== -1) {
+                moveUL();
+
+            }
+            if (state.arrayStates.indexOf('UpRight') !== -1) {
+                moveUR();
+
+            }
+            if (state.arrayStates.indexOf('Down') !== -1) {
+                moveD();
+
+            }
+            if (state.arrayStates.indexOf('DownLeft') !== -1) {
+                moveDL();
+
+            }
+            if (state.arrayStates.indexOf('DownRight') !== -1) {
+                moveDR();
+
+            }
+            if (state.arrayStates.indexOf('Left') !== -1) {
+                moveL();
+
+            }
+            if (state.arrayStates.indexOf('Right') !== -1) {
+                moveR();
+            }
+
+        });
+
+        var moveTimeOut = false;
+        function moveL() {
+            let xy = collision.getColliderProperties('player1');
+            xy.x = xy.x - pixels;
+            collision.updateCollider('player1', xy);
+
+            moveTimeOut = requestAnimationFrame(moveL);
+        }
+        function moveR() {
+            let xy = collision.getColliderProperties('player1');
+            xy.x = xy.x + pixels;
+            collision.updateCollider('player1', xy);
+
+            moveTimeOut = requestAnimationFrame(moveR);
+        }
+        function moveU() {
+            let xy = collision.getColliderProperties('player1');
+            xy.y = xy.y - pixels;
+            collision.updateCollider('player1', xy);
+
+            moveTimeOut = requestAnimationFrame(moveU);
+        }
+        function moveUL() {
+            let xy = collision.getColliderProperties('player1');
+            xy.x = xy.x - pixels;
+            xy.y = xy.y - pixels;
+            collision.updateCollider('player1', xy);
+
+            moveTimeOut = requestAnimationFrame(moveUL);
+        }
+        function moveUR() {
+            let xy = collision.getColliderProperties('player1');
+            xy.x = xy.x + pixels;
+            xy.y = xy.y - pixels;
+            collision.updateCollider('player1', xy);
+
+            moveTimeOut = requestAnimationFrame(moveUR);
+        }
+        function moveD() {
+            let xy = collision.getColliderProperties('player1');
+            xy.y = xy.y + pixels;
+            collision.updateCollider('player1', xy);
+
+            moveTimeOut = requestAnimationFrame(moveD);
+        }
+        function moveDL() {
+            let xy = collision.getColliderProperties('player1');
+            xy.x = xy.x - pixels;
+            xy.y = xy.y + pixels;
+            collision.updateCollider('player1', xy);
+
+            moveTimeOut = requestAnimationFrame(moveDL);
+        }
+        function moveDR() {
+            let xy = collision.getColliderProperties('player1');
+            xy.x = xy.x + pixels;
+            xy.y = xy.y + pixels;
+            collision.updateCollider('player1', xy);
+
+            moveTimeOut = requestAnimationFrame(moveDR);
+        }
+
+
+        function stopMove() {
+            //console.log('stopmove');
+            cancelAnimationFrame(moveTimeOut);
+        }
+
+        //LAYER
+        const layer = new Layer();
+
+        layer.createLayer({ layerId: 'layer1' });
+        layer.createLayer({ layerId: 'layer2' });
+        const layer1 = layer.getLayerById('layer1');
+        const layer2 = layer.getLayerById('layer2');
+
+
+        //COLISION
+        const collision = new Collision();
+
+        collision.listen(function (colliderIdOrigin, colliderIdDestiny, collideProps, colliderObject) {
+            console.log('%s collided with %s', colliderIdOrigin, colliderIdDestiny, collideProps, colliderObject);
+            if (colliderIdDestiny === 'object3') {
+                collision.deleteCollider('object3');
+            }
+        });
+
+        collision.createCollider('player1', true,
+            { x: 145, y: 70, w: 50, h: 50 }, //initial position
+            { drawOnUpdate: true, color: 'rgba(0,0,0,0.2)', context: layer2.context } //draw debug collider
+        );
+        collision.drawCollider('player1');
+        //collision.disableDrawCollider('player1');
+
+        collision.createCollider('object1', true, { x: 100, y: 160, w: 50, h: 50 });
+        collision.drawCollider('object1', { context: layer1.context, color: 'rgba(255,0,0,0.2)' });
+
+        collision.createCollider('object2', true, { x: 210, y: 190, w: 200, h: 10 });
+        collision.drawCollider('object2', { context: layer1.context, color: 'rgba(0,255,0,0.2)' });
+
+        collision.createCollider('object3', false, { x: 310, y: 290, w: 100, h: 150 });
+        collision.drawCollider('object3', { context: layer1.context, color: 'rgba(0,0,255,0.2)' });
+
+        collision.createCollider('ground', true, { x: 0, y: 500, w: 800, h: 100 });
+        collision.drawCollider('ground', { context: layer1.context, color: 'rgba(0,255,0,0.2)' });
+    </script>
+    <style>
+        .LayerContainer {
+            position: relative;
+        }
+
+        .LayerContainer>canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: 1px solid #000000;
+            image-rendering: optimizeSpeed;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: -o-crisp-edges;
+            image-rendering: pixelated;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
+    </style>
+</head>
+
+<body>
+
+</body>
+
+</html>
