@@ -97,7 +97,7 @@ export class Collision {
                 limits.x = isBlocked.colliderObject.box.x - limits.w - back;
             }
             this.colliders[colliderId].updatePosition(limits);
-            if (typeof callback === 'function') callback(limits);
+            if (typeof callback === 'function') callback(limits, isBlocked.isColliding);
             //emit event on collide with block
             this.notify(colliderId, isBlocked.colliderId, isBlocked.isColliding, isBlocked.colliderObject);
         }
@@ -265,13 +265,13 @@ class Collider {
     }
 
     clear() {
-        this.drawProperties.context.clearRect(this.oldBox.x, this.oldBox.y, this.oldBox.w, this.oldBox.h);
+        this.drawProperties.context.clearRect(this.oldBox.x - 10, this.oldBox.y - 10, this.oldBox.w + 20, this.oldBox.h + 20);
     }
 
     clearAll() {
         if (this.isDrawed) {
-            this.drawProperties.context.clearRect(this.oldBox.x, this.oldBox.y, this.oldBox.w, this.oldBox.h);
-            this.drawProperties.context.clearRect(this.box.x, this.box.y, this.box.w, this.box.h);
+            this.drawProperties.context.clearRect(this.oldBox.x - 10, this.oldBox.y - 10, this.oldBox.w + 20, this.oldBox.h + 20);
+            this.drawProperties.context.clearRect(this.box.x - 10, this.box.y - 10, this.box.w + 20, this.box.h + 20);
         }
     }
 
