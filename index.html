@@ -74,28 +74,27 @@
 
         var moveTimeOut = false;
         function moveL() {
-            let xy = collision.getColliderProperties('player1');
+            let xy = collision.getCollider('player1').getPosition();
             xy.x = xy.x - pixels;
             collision.updateCollider('player1', xy);
 
             moveTimeOut = requestAnimationFrame(moveL);
         }
         function moveR() {
-            let xy = collision.getColliderProperties('player1');
+            let xy = collision.getCollider('player1').getPosition();
             xy.x = xy.x + pixels;
             collision.updateCollider('player1', xy);
-
             moveTimeOut = requestAnimationFrame(moveR);
         }
         function moveU() {
-            let xy = collision.getColliderProperties('player1');
+            let xy = collision.getCollider('player1').getPosition();
             xy.y = xy.y - pixels;
             collision.updateCollider('player1', xy);
 
             moveTimeOut = requestAnimationFrame(moveU);
         }
         function moveUL() {
-            let xy = collision.getColliderProperties('player1');
+            let xy = collision.getCollider('player1').getPosition();
             xy.x = xy.x - pixels;
             xy.y = xy.y - pixels;
             collision.updateCollider('player1', xy);
@@ -103,7 +102,7 @@
             moveTimeOut = requestAnimationFrame(moveUL);
         }
         function moveUR() {
-            let xy = collision.getColliderProperties('player1');
+            let xy = collision.getCollider('player1').getPosition();
             xy.x = xy.x + pixels;
             xy.y = xy.y - pixels;
             collision.updateCollider('player1', xy);
@@ -111,14 +110,14 @@
             moveTimeOut = requestAnimationFrame(moveUR);
         }
         function moveD() {
-            let xy = collision.getColliderProperties('player1');
+            let xy = collision.getCollider('player1').getPosition();
             xy.y = xy.y + pixels;
             collision.updateCollider('player1', xy);
 
             moveTimeOut = requestAnimationFrame(moveD);
         }
         function moveDL() {
-            let xy = collision.getColliderProperties('player1');
+            let xy = collision.getCollider('player1').getPosition();
             xy.x = xy.x - pixels;
             xy.y = xy.y + pixels;
             collision.updateCollider('player1', xy);
@@ -126,14 +125,13 @@
             moveTimeOut = requestAnimationFrame(moveDL);
         }
         function moveDR() {
-            let xy = collision.getColliderProperties('player1');
+            let xy = collision.getCollider('player1').getPosition();
             xy.x = xy.x + pixels;
             xy.y = xy.y + pixels;
             collision.updateCollider('player1', xy);
 
             moveTimeOut = requestAnimationFrame(moveDR);
         }
-
 
         function stopMove() {
             //console.log('stopmove');

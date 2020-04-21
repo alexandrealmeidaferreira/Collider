@@ -50,53 +50,28 @@ export class Collision {
         return false;
     }
 
-    getColliderProperties(colliderId) {
-
-        if (this.colliders[colliderId]) {
-            let prop = {};
-            Object.assign(prop, this.colliders[colliderId].box);
-            return prop;
-        }
-        return false;
-    }
-
-    getColliderOldProperties(colliderId) {
-        if (this.colliders[colliderId]) {
-            let prop = {};
-            Object.assign(prop, this.colliders[colliderId].oldBox);
-            return prop;
-        }
-        return false;
-    }
-
-    setColliderProperties(colliderId, prop) {
-        if (this.colliders[colliderId]) {
-            this.colliders[colliderId].updatePosition(prop);
-        }
-    }
-
     updateCollider(colliderId, properties, callback) {
-        this.colliders[colliderId].updatePosition(properties);
+        this.colliders[colliderId].setPosition(properties.x, properties.y);
         //limits move to its collided
         var isBlocked = this.isCollidingWithBlockObject(colliderId);
         let back = 1;
         if (isBlocked) {
-            let limits = {};
-            Object.assign(limits, this.colliders[colliderId].box);
-
+            let limits = { position: {}, size: {} };
+            Object.assign(limits.position, this.colliders[colliderId].getPosition());
+            Object.assign(limits.size, this.colliders[colliderId].getSize());
             if (isBlocked.isColliding.top) {
-                limits.y = isBlocked.colliderObject.box.yh + back;
+                limits.position.y = isBlocked.colliderObject.getDim().yh + back;
             }
             if (isBlocked.isColliding.bottom) {
-                limits.y = isBlocked.colliderObject.box.y - limits.h - back;
+                limits.position.y = isBlocked.colliderObject.getPosition().y - limits.size.h - back;
             }
             if (isBlocked.isColliding.left) {
-                limits.x = isBlocked.colliderObject.box.xw + back;
+                limits.position.x = isBlocked.colliderObject.getDim().xw + back;
             }
             if (isBlocked.isColliding.right) {
-                limits.x = isBlocked.colliderObject.box.x - limits.w - back;
+                limits.position.x = isBlocked.colliderObject.getPosition().x - limits.size.w - back;
             }
-            this.colliders[colliderId].updatePosition(limits);
+            this.colliders[colliderId].setPosition(limits.position.x, limits.position.y);
             if (typeof callback === 'function') callback(limits, isBlocked.isColliding);
             //emit event on collide with block
             this.notify(colliderId, isBlocked.colliderId, isBlocked.isColliding, isBlocked.colliderObject);
@@ -186,25 +161,15 @@ class Collider {
     colliderId = false;
     isBlock = false;
     isDrawed = false;
-    box = {
-        x: 0,
-        y: 0,
-        w: 1,
-        h: 1,
-        xw: 1,
-        yh: 1,
-    };
-    oldBox = {
-        x: 0,
-        y: 0,
-        w: 0,
-        h: 0,
-        xw: 0,
-        yh: 0,
-    };
 
-    proximityLevel = 10;
-    proximityArea = {};
+    position = { x: 0, y: 0 };
+    size = { w: 0, h: 0 };
+
+    oldPosition = { x: -1, y: -1 };
+    oldSize = { w: -1, h: -1 };
+
+    dim = { xw: 0, yh: 0 };
+    oldDim = { xw: 0, yh: 0 };
 
     drawProperties = {
         drawOnUpdate: false,
@@ -221,57 +186,91 @@ class Collider {
             this.isBlock = props.isBlock;
             delete props.isBlock;
         }
-        Object.assign(this.box, props);
-        Object.assign(this.box, { xw: (props.x + props.w), yh: props.y + props.h });
+
+        this.setPosition(props.x, props.y);
+        this.setSize(props.w, props.h);
+        Object.assign(this.oldSize, this.getSize());
+        this.updateDim();
+    }
+
+    setPosition(x, y) {
+        Object.assign(this.oldPosition, this.getPosition());
+        Object.assign(this.position, { x, y });
+        this.updateDim();
+        if (this.drawProperties.drawOnUpdate) {
+            this.clear();
+            this.draw();
+        }
+
+    }
+    setSize(w, h) {
+        Object.assign(this.oldSize, this.getSize());
+        Object.assign(this.size, { w, h });
+    }
+
+    getPosition() {
+        return Object.assign({}, this.position);
+    }
+
+    getSize() {
+        return Object.assign({}, this.size);
+    }
+
+    getOldPosition() {
+        return Object.assign({}, this.oldPosition);
+    }
+
+    getOldSize() {
+        return Object.assign({}, this.oldSize);
+    }
+
+    updateDim() {
+        let dim = {};
+        dim.xw = (this.getPosition().x + this.getSize().w);
+        dim.yh = (this.getPosition().y + this.getSize().h);
+        Object.assign(this.oldDim, this.getDim());
+        Object.assign(this.dim, dim);
+    }
+
+    getDim() {
+        return Object.assign({}, this.dim);
+    }
+
+    getOldDim() {
+        return Object.assign({}, this.oldDim);
     }
 
     setDrawProperties(props) {
         Object.assign(this.drawProperties, props);
     }
 
-    proximityLevel(level) {
-        this.proximityLevel = level;
-    }
-
-    proximity() {
-        Object.assign(this.proximitArea, this.options);
-        this.proximityArea.x = this.proximityArea.x - this.proximityLevel;
-        this.proximityArea.y = this.proximityArea.y - this.proximityLevel;
-        this.proximityArea.w = this.proximityArea.w + this.proximityLevel;
-        this.proximityArea.h = this.proximityArea.h + this.proximityLevel;
-
-        this.proximityArea.xw = this.proximityArea.x + this.proximityArea.w + this.proximityLevel;
-        this.proximityArea.yh = this.proximityArea.y + this.proximityArea.h + this.proximityLevel;
-        return this.proximityArea;
-    }
-
-    //update position
-    updatePosition(props) {
-        if (JSON.stringify(this.box) !== JSON.stringify(this.oldBox)) {
-            Object.assign(this.oldBox, this.box);
-            Object.assign(this.box, props);
-            Object.assign(this.box, { xw: (props.x + props.w), yh: props.y + props.h });
-            if (this.drawProperties.drawOnUpdate) {
-                this.clear();
-                this.draw();
-            }
+    //update all properties
+    updateProperties(props) {
+        this.setPosition(props.x, props.y);
+        this.setSize(props.w, props.h);
+        this.updateDim();
+        if (this.drawProperties.drawOnUpdate) {
+            this.clear();
+            this.draw();
         }
     }
 
     draw() {
         this.isDrawed = true;
         this.drawProperties.context.fillStyle = this.drawProperties.color;
-        this.drawProperties.context.fillRect(this.box.x, this.box.y, this.box.w, this.box.h)
+        this.drawProperties.context.fillRect(this.getPosition().x, this.getPosition().y, this.getSize().w, this.getSize().h)
     }
 
     clear() {
-        this.drawProperties.context.clearRect(this.oldBox.x - 10, this.oldBox.y - 10, this.oldBox.w + 20, this.oldBox.h + 20);
+        if (this.isDrawed) {
+            this.drawProperties.context.clearRect(this.getOldPosition().x - 10, this.getOldPosition().y - 10, this.getOldSize().w + 20, this.getOldSize().h + 20);
+        }
     }
 
     clearAll() {
+        this.clear();
         if (this.isDrawed) {
-            this.drawProperties.context.clearRect(this.oldBox.x - 10, this.oldBox.y - 10, this.oldBox.w + 20, this.oldBox.h + 20);
-            this.drawProperties.context.clearRect(this.box.x - 10, this.box.y - 10, this.box.w + 20, this.box.h + 20);
+            this.drawProperties.context.clearRect(this.getPosition().x - 10, this.getPosition().y - 10, this.getSize().w + 20, this.getSize().h + 20);
         }
     }
 
@@ -284,28 +283,28 @@ class Collider {
             right: false,
         };
 
-        if (this.box.y >= collider.box.y && collider.box.yh >= this.box.y
+        if (this.getPosition().y >= collider.getPosition().y && collider.getDim().yh >= this.getPosition().y
 
-            && this.box.yh < this.oldBox.yh) {
+            && this.getDim().yh < this.getOldDim().yh) {
             colliding.top = true;
         }
 
-        else if (this.box.yh >= collider.box.y && collider.box.yh >= this.box.yh
+        else if (this.getDim().yh >= collider.getPosition().y && collider.getDim().yh >= this.getDim().yh
 
-            && this.box.yh > this.oldBox.yh) {
+            && this.getDim().yh > this.getOldDim().yh) {
             colliding.bottom = true;
         }
 
-        else if (this.box.x >= collider.box.x && collider.box.xw >= this.box.x
+        else if (this.getPosition().x >= collider.getPosition().x && collider.getDim().xw >= this.getPosition().x
 
-            && this.box.xw < this.oldBox.xw) {
+            && this.getDim().xw < this.getOldDim().xw) {
 
             colliding.left = true;
         }
 
-        else if (this.box.xw >= collider.box.x && collider.box.xw >= this.box.xw
+        else if (this.getDim().xw >= collider.getPosition().x && collider.getDim().xw >= this.getDim().xw
 
-            && this.box.xw > this.oldBox.xw) {
+            && this.getDim().xw > this.getOldDim().xw) {
 
             colliding.right = true;
         }
@@ -315,25 +314,11 @@ class Collider {
 
     //is colliding
     isColliding(collider) {
-
-        if (this.box.xw >= collider.box.x && this.box.x <= collider.box.xw
+        if (this.getDim().xw >= collider.getPosition().x && this.getPosition().x <= collider.getDim().xw
             &&
-            this.box.yh >= collider.box.y && this.box.y <= collider.box.yh
+            this.getDim().yh >= collider.getPosition().y && this.getPosition().y <= collider.getDim().yh
         ) {
             return this.whereIsColliding(collider);
-        }
-        return false;
-    }
-
-    //is is close?
-    isClose(collider) {
-
-        if (this.box.xw >= collider.proximityArea.x && this.box.x <= collider.proximityArea.xw
-            &&
-            this.box.yh >= collider.proximityArea.y && this.box.y <= collider.proximityArea.yh
-        ) {
-            //return this.whereIsColliding(collider);
-            return true;
         }
         return false;
     }
@@ -341,8 +326,8 @@ class Collider {
     //get distance
     distanceFrom(collider) {
         // from center diance
-        var a = (this.box.x + (this.box.w / 2)) - (collider.box.x + (collider.box.w / 2));
-        var b = (this.box.y + (this.box.h / 2)) - (collider.box.y + (collider.box.h / 2));
+        var a = (this.getPosition().x + (this.getSize().w / 2)) - (collider.getPosition().x + (collider.getSize().w / 2));
+        var b = (this.getPosition().y + (this.getSize().h / 2)) - (collider.getPosition().y + (collider.getSize().h / 2));
         var c = Math.hypot(a, b);
         return parseInt(c);
     }
